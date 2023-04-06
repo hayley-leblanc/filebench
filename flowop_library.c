@@ -2497,13 +2497,17 @@ flowoplib_appendfilerand(threadflow_t *threadflow, flowop_t *flowop)
 	flowop_beginop(threadflow, flowop);
 
 	(void) FB_LSEEK(fdesc, 0, SEEK_END);
-	ret = FB_WRITE(fdesc, iobuf, appendsize);
-	if (ret != appendsize) {
-		filebench_log(LOG_ERROR,
-		    "Failed to write %llu bytes on fd %d: %s",
-		    (u_longlong_t)appendsize, fdesc->fd_num, strerror(errno));
-		flowop_endop(threadflow, flowop, 0);
-		return (FILEBENCH_ERROR);
+	int bytes_written = 0;
+	while (bytes_written != appendsize) {
+		ret = FB_WRITE(fdesc, iobuf, appendsize - bytes_written);
+		bytes_written += ret;
+		if (ret < 0) {
+			filebench_log(LOG_ERROR,
+				"Failed to write %llu bytes on fd %d: %s",
+				(u_longlong_t)appendsize, fdesc->fd_num, strerror(errno));
+			flowop_endop(threadflow, flowop, 0);
+			return (FILEBENCH_ERROR);
+		}
 	}
 
 	flowop_endop(threadflow, flowop, appendsize);
