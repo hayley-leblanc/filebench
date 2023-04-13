@@ -1644,7 +1644,8 @@ flowoplib_createfile(threadflow_t *threadflow, flowop_t *flowop)
 
 	if ((err = flowoplib_pickfile(&file, flowop,
 	    FILESET_PICKNOEXIST, 0)) != FILEBENCH_OK) {
-		filebench_log(LOG_DEBUG_SCRIPT,
+		// filebench_log(LOG_DEBUG_SCRIPT,
+		filebench_log(LOG_ERROR,
 		    "flowop %s failed to pick file from fileset %s",
 		    flowop->fo_name,
 		    avd_get_str(flowop->fo_fileset->fs_name));
@@ -1726,7 +1727,8 @@ flowoplib_deletefile(threadflow_t *threadflow, flowop_t *flowop)
 		/* pick arbitrary, existing (allocated) file */
 		if ((err = flowoplib_pickfile(&file, flowop,
 		    FILESET_PICKEXISTS, 0)) != FILEBENCH_OK) {
-			filebench_log(LOG_DEBUG_SCRIPT,
+			// filebench_log(LOG_DEBUG_SCRIPT,
+			filebench_log(LOG_ERROR,
 			    "flowop %s failed to pick file", flowop->fo_name);
 			return (err);
 		}
@@ -2107,7 +2109,7 @@ flowoplib_statfile(threadflow_t *threadflow, flowop_t *flowop)
 
 		/* check whether file handle still valid */
 		if ((file = threadflow->tf_fse[fd]) == NULL) {
-			filebench_log(LOG_DEBUG_SCRIPT,
+			filebench_log(LOG_ERROR,
 			    "flowop %s trying to stat NULL file at fd = %d",
 			    flowop->fo_name, fd);
 			return (FILEBENCH_ERROR);
@@ -2143,7 +2145,7 @@ flowoplib_statfile(threadflow_t *threadflow, flowop_t *flowop)
 		/* pick arbitrary, existing (allocated) file */
 		if ((err = flowoplib_pickfile(&file, flowop,
 		    FILESET_PICKEXISTS, 0)) != FILEBENCH_OK) {
-			filebench_log(LOG_DEBUG_SCRIPT,
+			filebench_log(LOG_ERROR,
 			    "Statfile flowop %s failed to pick file",
 			    flowop->fo_name);
 			return (err);
@@ -2381,16 +2383,20 @@ flowoplib_writewholefile(threadflow_t *threadflow, flowop_t *flowop)
 	/* Measure time to write bytes */
 	flowop_beginop(threadflow, flowop);
 	for (seek = 0; seek < wss; seek += wsize) {
-		ret = FB_WRITE(fdesc, iobuf, wsize);
-		if (ret != wsize) {
-			filebench_log(LOG_ERROR,
-			    "Failed to write %d bytes on fd %d: %s",
-			    wsize, fdesc->fd_num, strerror(errno));
-			flowop_endop(threadflow, flowop, 0);
-			return (FILEBENCH_ERROR);
+		int bytes_written = 0;
+		while (bytes_written < wsize) {
+			ret = FB_WRITE(fdesc, iobuf, wsize);
+			if (ret < 0) {
+				filebench_log(LOG_ERROR,
+					"Failed to write %d bytes on fd %d: %s",
+					wsize, fdesc->fd_num, strerror(errno));
+				flowop_endop(threadflow, flowop, 0);
+				return (FILEBENCH_ERROR);
+			}
+			wsize = (int)MIN(wss - seek, iosize);
+			bytes += ret;
+			bytes_written += ret;
 		}
-		wsize = (int)MIN(wss - seek, iosize);
-		bytes += ret;
 	}
 	flowop_endop(threadflow, flowop, bytes);
 
