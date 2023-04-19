@@ -223,17 +223,16 @@ stats_snap(void)
 	free(str);
 
 	filebench_log(LOG_INFO,
-	    "IO Summary: %5d ops %5.3lf ops/s %0.0lf/%0.0lf rd/wr "
-	    "%5.1lfmb/s %5.3fms/op",
-	    iostat->fs_count + aiostat->fs_count,
-	    (iostat->fs_count + aiostat->fs_count) / total_time_sec,
-	    (iostat->fs_rcount + aiostat->fs_rcount) / total_time_sec,
-	    (iostat->fs_wcount + aiostat->fs_wcount) / total_time_sec,
-	    ((iostat->fs_bytes + aiostat->fs_bytes) / MB_FLOAT)
-						/ total_time_sec,
-	    (iostat->fs_count + aiostat->fs_count) ?
-	    (iostat->fs_total_lat + aiostat->fs_total_lat) /
-	    ((iostat->fs_count + aiostat->fs_count) * SEC2MS_FLOAT) : 0);
+				  "IO Summary: %5d ops %5.3lf ops/s %0.0lf/%0.0lf rd/wr "
+				  "%5.1lf mb/s %5.3f ms/op",
+				  iostat->fs_count + aiostat->fs_count,
+				  (iostat->fs_count + aiostat->fs_count) / total_time_sec,
+				  (iostat->fs_rcount + aiostat->fs_rcount) / total_time_sec,
+				  (iostat->fs_wcount + aiostat->fs_wcount) / total_time_sec,
+				  ((iostat->fs_bytes + aiostat->fs_bytes) / MB_FLOAT) / total_time_sec,
+				  (iostat->fs_count + aiostat->fs_count) ? (iostat->fs_total_lat + aiostat->fs_total_lat) /
+															   ((iostat->fs_count + aiostat->fs_count) * SEC2MS_FLOAT)
+														 : 0);
 
 	filebench_shm->shm_bequiet = 0;
 }

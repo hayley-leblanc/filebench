@@ -362,16 +362,19 @@ fileset_alloc_file(filesetentry_t *entry)
 		 * except on last write
 		 */
 		wsize = MIN(entry->fse_size - seek, FILE_ALLOC_BLOCK);
-
-		ret = FB_WRITE(&fdesc, buf, wsize);
-		if (ret != wsize) {
-			filebench_log(LOG_ERROR,
-			    "Failed to pre-allocate file %s: %s",
-			    path, strerror(errno));
-			(void) FB_CLOSE(&fdesc);
-			free(buf);
-			fileset_unbusy(entry, TRUE, FALSE, 0);
-			return (FILEBENCH_ERROR);
+		int bytes_written = 0;
+		while (bytes_written != wsize) {
+			ret = FB_WRITE(&fdesc, buf, wsize - bytes_written);
+			if (ret < 0) {
+				filebench_log(LOG_ERROR,
+					"Failed to pre-allocate file %s: %s",
+					path, strerror(errno));
+				(void) FB_CLOSE(&fdesc);
+				free(buf);
+				fileset_unbusy(entry, TRUE, FALSE, 0);
+				return (FILEBENCH_ERROR);
+			}
+			bytes_written += ret;
 		}
 		seek += wsize;
 	}
