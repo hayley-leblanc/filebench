@@ -174,6 +174,7 @@ stats_snap(void)
 	str = malloc(1048576);
 	*str = '\0';
 	(void) strcpy(str, "Per-Operation Breakdown\n");
+	(void)strcpy(str, "op,ops,ops/s,mb/s,ms/op,max latency(ms),min latency(ms),\n");
 	while (flowop) {
 		char line[1024];
 		char histogram[1024];
@@ -185,20 +186,20 @@ stats_snap(void)
 			continue;
 		}
 
-		(void) snprintf(line, sizeof(line), "%-20s %dops %8.0lfops/s "
-		    "%5.1lfmb/s %8.3fms/op",
-		    flowop->fo_name,
-		    flowop->fo_stats.fs_count,
-		    flowop->fo_stats.fs_count / total_time_sec,
-		    (flowop->fo_stats.fs_bytes / MB_FLOAT) / total_time_sec,
-		    flowop->fo_stats.fs_count ?
-		    flowop->fo_stats.fs_total_lat /
-		    (flowop->fo_stats.fs_count * SEC2MS_FLOAT) : 0);
+		(void)snprintf(line, sizeof(line), "%s,%d,%.0lf,"
+										   "%.1lf,%.3f,",
+					   flowop->fo_name,
+					   flowop->fo_stats.fs_count,
+					   flowop->fo_stats.fs_count / total_time_sec,
+					   (flowop->fo_stats.fs_bytes / MB_FLOAT) / total_time_sec,
+					   flowop->fo_stats.fs_count ? flowop->fo_stats.fs_total_lat /
+													   (flowop->fo_stats.fs_count * SEC2MS_FLOAT)
+												 : 0);
 		(void) strcat(str, line);
 
-		(void) snprintf(line, sizeof(line)," [%.3fms - %5.3fms]",
-			flowop->fo_stats.fs_minlat / SEC2MS_FLOAT,
-			flowop->fo_stats.fs_maxlat / SEC2MS_FLOAT);
+		(void)snprintf(line, sizeof(line), "%f,%.3f,",
+					   flowop->fo_stats.fs_minlat / SEC2MS_FLOAT,
+					   flowop->fo_stats.fs_maxlat / SEC2MS_FLOAT);
 		(void) strcat(str, line);
 
 		if (filebench_shm->lathist_enabled) {
@@ -215,6 +216,13 @@ stats_snap(void)
 
 		flowop = flowop->fo_next;
 	}
+
+	char summary[1024];
+	(void)snprintf(summary, sizeof(summary),
+				   "total,%d,%.3lf,%.1lf,", iostat->fs_count + aiostat->fs_count,
+				   (iostat->fs_count + aiostat->fs_count) / total_time_sec,
+				   ((iostat->fs_bytes + aiostat->fs_bytes) / MB_FLOAT) / total_time_sec);
+	(void)strcat(str, summary);
 
 	/* removing last \n  */
 	str[strlen(str) - 1] = '\0';
