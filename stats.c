@@ -174,7 +174,7 @@ stats_snap(void)
 	str = malloc(1048576);
 	*str = '\0';
 	(void) strcpy(str, "Per-Operation Breakdown\n");
-	(void)strcpy(str, "op,ops,ops/s,mb/s,ms/op,max latency(ms),min latency(ms),\n");
+	(void)strcpy(str, "op,ops,ops/s,mb/s,ms/op,min latency(ms),max latency(ms),\n");
 	while (flowop) {
 		char line[1024];
 		char histogram[1024];
